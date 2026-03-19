@@ -56,7 +56,7 @@ public class fuelintake extends SubsystemBase {
 
     OUTTAKE(-.1, .6), // Not sure about speeds, test them out
 
-    INTAKE(-.31 , -.25);
+    INTAKE(-.29 , -.25);
 
     public final double Position;
 
@@ -142,7 +142,7 @@ public class fuelintake extends SubsystemBase {
 
     MotionMagicConfigs motionMagicConfigs = motorConfig.MotionMagic;
 
-    motionMagicConfigs.MotionMagicAcceleration = 1.25;
+    motionMagicConfigs.MotionMagicAcceleration = 1;
 
     motionMagicConfigs.MotionMagicCruiseVelocity = 5;
 
