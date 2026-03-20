@@ -20,9 +20,10 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
-
+import frc.robot.commands.AutoLock;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
+import frc.robot.subsystems.Indexer;
 import frc.robot.subsystems.fuelintake;
 import frc.robot.subsystems.shooter;
 import frc.robot.subsystems.vision;
@@ -31,8 +32,10 @@ public class RobotContainer {
 
         private final CommandXboxController joystick;
         private final fuelintake Intake;
+        private final Indexer Indexer;
         private final ButtonBoardControls ButtonBoard;
-        public final CommandSwerveDrivetrain drivetrain;
+        private final CommandSwerveDrivetrain drivetrain;
+        private final vision Vision;
 
         private double MaxSpeed; // kSpeedAt12Volts desired top speed
         private double MaxAngularRate; // 3/4 of a rotation per second max angular velocity
@@ -42,16 +45,21 @@ public class RobotContainer {
         private final SwerveRequest.PointWheelsAt point;
         private final SwerveRequest.RobotCentric robot;
 
+        // In RobotContainer.java
+
+        private final AutoLock autoLock;
+
         private shooter LeftShooter = new shooter(Constants.LeftSHOOTERouterID, Constants.LeftSHOOTERinnerID, false);
         private shooter RightShooter = new shooter(Constants.RightSHOOTERinnerID, Constants.RightSHOOTERouterID, true);
 
         public RobotContainer() {
 
-
                 joystick = new CommandXboxController(Constants.XboxController);
                 ButtonBoard = new ButtonBoardControls(Constants.ButtonBoard);
                 drivetrain = TunerConstants.createDrivetrain();
                 Intake = new fuelintake(Constants.IntakeRoller, Constants.IntakePivot, Constants.INTAKECANID);
+                Indexer = new Indexer(Constants.IndexerID);
+                Vision = new vision();
 
                 MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
                 MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond);
@@ -65,65 +73,67 @@ public class RobotContainer {
 
                 robot = new SwerveRequest.RobotCentric()
                                 .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1) // Add a 10%
-                                                                                                           // deadband
                                 .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
+                autoLock = new AutoLock(
+                                drivetrain,
+                                () -> -joystick.getLeftY() * MaxSpeed,
+                                () -> -joystick.getLeftX() * MaxSpeed);
 
                 configureBindings();
         }
 
         private void configureBindings() {
 
+                // In configureBindings()
+                joystick.rightBumper().toggleOnTrue(autoLock);
+                joystick.rightTrigger().onTrue(LeftShooter.SHOOT(()-> Vision.getDistance())
+                        .alongWith(RightShooter.SHOOT(()-> Vision.getDistance()))
+                        .alongWith(Indexer.INDEX_IN()));
+//change intake controls to gunner
                 joystick.leftBumper().onTrue(Intake.INTAKE());
                 joystick.leftBumper().onFalse(Intake.IDLE());
 
-                //test shooter bindings
-               // joystick.rightTrigger().onTrue(LeftShooter.SETRPM(100)
-                 //               .alongWith(RightShooter.SETRPM(100)));
+                ButtonBoard.Button10().onTrue(Indexer.INDEX_OUT());
 
-/*                 joystick
-                                .rightBumper()
-                                .onTrue(
-                                                LeftShooter.SETRPM(50)
-                                                                .alongWith(RightShooter.SETRPM(50)))
-                                                                .onFalse(LeftShooter.SETRPM(0).alongWith(RightShooter.SETRPM(0)));;
-   */                                                             
-                
-                                                                
+
+                // test shooter bindings
+                // joystick.rightTrigger().onTrue(LeftShooter.SETRPM(100)
+                // .alongWith(RightShooter.SETRPM(100)));
+
+                /*
+                 * joystick
+                 * .rightBumper()
+                 * .onTrue(
+                 * LeftShooter.SETRPM(50)
+                 * .alongWith(RightShooter.SETRPM(50)))
+                 * .onFalse(LeftShooter.SETRPM(0).alongWith(RightShooter.SETRPM(0)));;
+                 */
 
                 drivetrain.setDefaultCommand(
-                                // Drivetrain will execute this command periodically
-                                drivetrain.applyRequest(() -> robot.withVelocityX(-joystick.getLeftY() * MaxSpeed) // Drive
-                                                                                                                   // forward
-                                                                                                                   // with
-                                                                                                                   // negative
-                                                                                                                   // Y
-                                                                                                                   // (forward)
-                                                .withVelocityY(joystick.getLeftX() * MaxSpeed) // Drive left with
-                                                                                                // negative X (left)
-                                                .withRotationalRate(joystick.getRightX() * MaxAngularRate) // Drive
-                                                                                                            // counterclockwise
-                                                                                                            // with
-                                                                                                            // negative
-                                                                                                            // X (left)
-                                ));
+                         // Drivetrain will execute this command periodically
+                        drivetrain.applyRequest(() -> robot.withVelocityX(-joystick.getLeftY() * MaxSpeed) // Drive forward with negative Y (forward)
+                                .withVelocityY(joystick.getLeftX() * MaxSpeed) // Drive left with negative X (left)
+                                .withRotationalRate(joystick.getRightX() * MaxAngularRate)) // Drive counterclockwise with negative X (left)
+                                
+                );
 
                 // Idle while the robot is disabled. This ensures the configured
                 // neutral mode is applied to the drive motors while disabled.
                 final var idle = new SwerveRequest.Idle();
                 RobotModeTriggers.disabled().whileTrue(
-                                drivetrain.applyRequest(() -> idle).ignoringDisable(true));
+                        drivetrain.applyRequest(() -> idle).ignoringDisable(true));
 
                 joystick.a().whileTrue(drivetrain.applyRequest(() -> brake));
                 joystick.b().whileTrue(drivetrain.applyRequest(
-                                () -> point.withModuleDirection(
-                                                new Rotation2d(-joystick.getLeftY(), -joystick.getLeftX()))));
+                        () -> point.withModuleDirection(
+                                new Rotation2d(-joystick.getLeftY(), -joystick.getLeftX()))));
 
                 // Run SysId routines when holding back/start and X/Y.
                 // Note that each routine should be run exactly once in a single log.
-                joystick.back().and(joystick.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
-                joystick.back().and(joystick.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
-                joystick.start().and(joystick.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
-                joystick.start().and(joystick.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
+                // joystick.back().and(joystick.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
+                // joystick.back().and(joystick.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
+                // joystick.start().and(joystick.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
+                // joystick.start().and(joystick.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
 
                 // Reset the field-centric heading on left bumper press.
         }
@@ -144,6 +154,5 @@ public class RobotContainer {
                                 drivetrain.applyRequest(() -> idle));
 
         }
-
 
 }

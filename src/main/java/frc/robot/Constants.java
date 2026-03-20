@@ -13,9 +13,14 @@ public class Constants {
   public static int RightSHOOTERinnerID = 12;
   public static int RightSHOOTERouterID = 13;
 
+  //indexer
+
+  public static int IndexerID = 14;
+
   // controller
   public static int XboxController = 1;
   public static int ButtonBoard = 2;
+
   // pivots
   public static final double kP = .9;
   public static final double KV = 0.12;
