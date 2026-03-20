@@ -56,7 +56,7 @@ public class fuelintake extends SubsystemBase {
 
     OUTTAKE(-.1, .6), // Not sure about speeds, test them out
 
-    INTAKE(-.29 , -.25);
+    INTAKE(-.29 , -.5);
 
     public final double Position;
 

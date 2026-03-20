@@ -17,7 +17,7 @@ public class Constants {
   public static int XboxController = 1;
   public static int ButtonBoard = 2;
   // pivots
-  public static final double kP = .5;
+  public static final double kP = .9;
   public static final double KV = 0.12;
 
   public static final double KPofSHOOTER = 4;
