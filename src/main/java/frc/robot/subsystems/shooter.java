@@ -3,6 +3,7 @@ package frc.robot.subsystems;
 import java.util.function.DoubleSupplier;
 
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
@@ -46,6 +47,12 @@ public class shooter extends SubsystemBase {
 
         var output = config.MotorOutput;
 
+        config.CurrentLimits.StatorCurrentLimit = 60.0;
+        config.CurrentLimits.StatorCurrentLimitEnable = true;
+
+        config.CurrentLimits.SupplyCurrentLimit = 60.0;
+        config.CurrentLimits.SupplyCurrentLimitEnable = true;
+
         output.Inverted = invert ? InvertedValue.CounterClockwise_Positive : InvertedValue.Clockwise_Positive;
 
         L.getConfigurator().apply(config);
@@ -62,8 +69,23 @@ public class shooter extends SubsystemBase {
         R.setControl(setter);
     }
 
+    private DutyCycleOut percentageSet = new DutyCycleOut(0);
+
+    private void setPercent(double percentage) {
+
+        percentageSet.withOutput(percentage);
+
+        L.setControl(percentageSet);
+        R.setControl(percentageSet);
+
+    }
+
     public Command SETRPM(double RPM) {
         return Commands.runOnce(() -> setRPM(RPM), this);
+    }
+
+    public Command SET_PERCENTAGE(double percentage) {
+        return Commands.runOnce(() -> setPercent(percentage), this);
     }
 
     // supply with distance from vision in order to get correct RPM

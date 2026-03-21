@@ -10,7 +10,6 @@ import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
-import com.revrobotics.spark.config.SparkBaseConfig;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import com.revrobotics.PersistMode;
 import com.revrobotics.ResetMode;
@@ -54,7 +53,7 @@ public class fuelintake extends SubsystemBase {
 
     IDLE(0, 0),
 
-    OUTTAKE(-.1, .6), // Not sure about speeds, test them out
+    OUTTAKE(-.29, .5), // Not sure about speeds, test them out
 
     INTAKE(-.29 , -.5);
 

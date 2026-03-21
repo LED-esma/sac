@@ -19,7 +19,7 @@ public class Indexer extends SubsystemBase {
 
     public enum IndexState {
         INDEX_IN(5.0),
-        INDEX_OUT(5.0),
+        INDEX_OUT(-5.0),
         INDEX_IDLE(0);
 
         public final double Speed;
@@ -51,5 +51,15 @@ public class Indexer extends SubsystemBase {
     public Command INDEX_IDLE() {
         return Commands.runOnce(() -> setState(IndexState.INDEX_IDLE), this);
 
-    }          
+    }
+    
+    public Command INDEXCYCLE(){
+        return Commands.sequence(
+            INDEX_OUT(),
+            Commands.waitSeconds(3),
+            INDEX_IN(),
+            Commands.waitSeconds(2),
+            INDEX_IDLE()
+        );
+    }
 }

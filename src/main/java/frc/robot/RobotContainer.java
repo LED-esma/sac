@@ -6,20 +6,15 @@ package frc.robot;
 
 import static edu.wpi.first.units.Units.*;
 
-import java.net.Socket;
-
-import javax.xml.crypto.Data;
-
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
+import com.pathplanner.lib.auto.NamedCommands;
+import com.pathplanner.lib.commands.FollowPathCommand;
 
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
+
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
-import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.commands.AutoLock;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
@@ -29,6 +24,8 @@ import frc.robot.subsystems.shooter;
 import frc.robot.subsystems.vision;
 
 public class RobotContainer {
+
+        //CANGE TO FEILD WHEN AT COMP
 
         private final CommandXboxController joystick;
         private final fuelintake Intake;
@@ -40,7 +37,7 @@ public class RobotContainer {
         private double MaxSpeed; // kSpeedAt12Volts desired top speed
         private double MaxAngularRate; // 3/4 of a rotation per second max angular velocity
 
-        private final SwerveRequest.FieldCentric drive; // Use open-loop control for drive motors
+        private final SwerveRequest.FieldCentric field; // Use open-loop control for drive motors
         private final SwerveRequest.SwerveDriveBrake brake;
         private final SwerveRequest.PointWheelsAt point;
         private final SwerveRequest.RobotCentric robot;
@@ -66,7 +63,7 @@ public class RobotContainer {
 
                 point = new SwerveRequest.PointWheelsAt();
                 brake = new SwerveRequest.SwerveDriveBrake();
-                drive = new SwerveRequest.FieldCentric()
+                field = new SwerveRequest.FieldCentric()
                                 .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1) // Add a 10%
                                                                                                            // deadband
                                 .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
@@ -79,22 +76,44 @@ public class RobotContainer {
                                 () -> -joystick.getLeftY() * MaxSpeed,
                                 () -> -joystick.getLeftX() * MaxSpeed);
 
-                configureBindings();
-        }
+                configureBindings();  
+                
 
+
+
+        }
+//   private void namedCommands() {
+
+//     NamedCommands.registerCommand("INTAKE", Intake.INTAKE());
+//     NamedCommands.registerCommand("IDLE", Intake.IDLE());
+//   }
         private void configureBindings() {
+                //change all mechanismz to gunner at comp, bring button boeard
 
                 // In configureBindings()
                 joystick.rightBumper().toggleOnTrue(autoLock);
                 joystick.rightTrigger().onTrue(LeftShooter.SHOOT(()-> Vision.getDistance())
                         .alongWith(RightShooter.SHOOT(()-> Vision.getDistance()))
                         .alongWith(Indexer.INDEX_IN()));
-//change intake controls to gunner
-                joystick.leftBumper().onTrue(Intake.INTAKE());
-                joystick.leftBumper().onFalse(Intake.IDLE());
+                // joystick.leftBumper().onTrue(Intake.INTAKE());
+                // joystick.leftBumper().onFalse(Intake.IDLE());
 
-                ButtonBoard.Button10().onTrue(Indexer.INDEX_OUT());
+                ButtonBoard.Button7().toggleOnTrue(Intake.INTAKE()).toggleOnFalse(Intake.OUTTAKE());
 
+
+                ButtonBoard.Button11().toggleOnFalse(Indexer.INDEX_IDLE()).toggleOnTrue(Indexer.INDEXCYCLE());
+
+
+                ButtonBoard.Button10().onTrue(LeftShooter.SET_PERCENTAGE(0.6)
+                        .alongWith(RightShooter.SET_PERCENTAGE(0.6)));
+
+                ButtonBoard.Button10().onFalse(LeftShooter.SET_PERCENTAGE(0)
+                        .alongWith(RightShooter.SET_PERCENTAGE(0)));
+                                
+
+
+                ButtonBoard.Button9().onTrue(LeftShooter.SET_PERCENTAGE(0.7)
+                        .alongWith(RightShooter.SET_PERCENTAGE(0.7)));
 
                 // test shooter bindings
                 // joystick.rightTrigger().onTrue(LeftShooter.SETRPM(100)
@@ -111,7 +130,7 @@ public class RobotContainer {
 
                 drivetrain.setDefaultCommand(
                          // Drivetrain will execute this command periodically
-                        drivetrain.applyRequest(() -> robot.withVelocityX(-joystick.getLeftY() * MaxSpeed) // Drive forward with negative Y (forward)
+                        drivetrain.applyRequest(() -> field.withVelocityX(-joystick.getLeftY() * MaxSpeed) // Drive forward with negative Y (forward)
                                 .withVelocityY(joystick.getLeftX() * MaxSpeed) // Drive left with negative X (left)
                                 .withRotationalRate(joystick.getRightX() * MaxAngularRate)) // Drive counterclockwise with negative X (left)
                                 
@@ -138,21 +157,21 @@ public class RobotContainer {
                 // Reset the field-centric heading on left bumper press.
         }
 
-        public Command getAutonomousCommand() {
-                // Simple drive forward auton
-                final var idle = new SwerveRequest.Idle();
-                return Commands.sequence(
-                                // Reset our field centric heading to match the robot
-                                // facing away from our alliance station wall (0 deg).
-                                drivetrain.runOnce(() -> drivetrain.seedFieldCentric(Rotation2d.kZero)),
-                                // Then slowly drive forward (away from us) for 5 seconds.
-                                drivetrain.applyRequest(() -> drive.withVelocityX(0.5)
-                                                .withVelocityY(0)
-                                                .withRotationalRate(0))
-                                                .withTimeout(5.0),
-                                // Finally idle for the rest of auton
-                                drivetrain.applyRequest(() -> idle));
+        // public Command getAutonomousCommand() {
+        //         // Simple drive forward auton
+        //         final var idle = new SwerveRequest.Idle();
+        //         return Commands.sequence(
+        //                         // Reset our field centric heading to match the robot
+        //                         // facing away from our alliance station wall (0 deg).
+        //                         drivetrain.runOnce(() -> drivetrain.seedFieldCentric(Rotation2d.kZero)),
+        //                         // Then slowly drive forward (away from us) for 5 seconds.
+        //                         drivetrain.applyRequest(() -> drive.withVelocityX(0.5)
+        //                                         .withVelocityY(0)
+        //                                         .withRotationalRate(0))
+        //                                         .withTimeout(5.0),
+        //                         // Finally idle for the rest of auton
+        //                         drivetrain.applyRequest(() -> idle));
 
-        }
+        // }
 
 }
