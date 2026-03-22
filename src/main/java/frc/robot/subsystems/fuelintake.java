@@ -9,11 +9,12 @@ import com.ctre.phoenix6.controls.MotionMagicDutyCycle;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
-import com.revrobotics.spark.SparkLowLevel.MotorType;
-import com.revrobotics.spark.config.SparkMaxConfig;
 import com.revrobotics.PersistMode;
 import com.revrobotics.ResetMode;
+import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
+import com.revrobotics.spark.config.SparkMaxConfig;
+
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -53,9 +54,11 @@ public class fuelintake extends SubsystemBase {
 
     IDLE(0, 0),
 
-    OUTTAKE(-.29, .5), // Not sure about speeds, test them out
+    OUTTAKE(-.31, .5), // Not sure about speeds, test them out
 
-    INTAKE(-.29 , -.5);
+    INTAKE(-.31 , -.5),
+
+    STOP(-31,0);
 
     public final double Position;
 
@@ -110,6 +113,12 @@ public class fuelintake extends SubsystemBase {
     return Commands.runOnce(() -> setState(IntakeState.OUTTAKE), this);
   }
 
+public Command STOP() {
+
+    return Commands.runOnce(() -> setState(IntakeState.STOP), this);
+  }
+
+  
   // Our use of an encoder and PID
 
   // Long story short, it slows down the pivot motor once the intake aproaches its desired angle.
